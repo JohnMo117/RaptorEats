@@ -1,0 +1,31 @@
+{
+  "expo": {
+    "name": "Raptor Eats",
+    "slug": "raptor-eats",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/logo.png",
+    "scheme": "raptoreats",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/images/logo.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#FFFFFF"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.raptoreats.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/logo.png",
+        "backgroundColor": "#FFFFFF"
+      },
+      "package": "com.raptoreats.app"
+    },
+    "plugins": [
+      "expo-font"
+    ]
+  }
+}
