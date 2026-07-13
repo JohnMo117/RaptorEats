@@ -21,6 +21,7 @@ import {
   BorderRadius,
 } from '../theme';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import CTAButton from '../components/CTAButton';
 
 /**
@@ -33,6 +34,8 @@ import CTAButton from '../components/CTAButton';
  */
 export default function LoginScreen() {
   const { login } = useAuth();
+  const { colors, isHighContrast } = useTheme();
+  const styles = React.useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
 
   const [email, setEmail] = useState('');
@@ -62,7 +65,7 @@ export default function LoginScreen() {
       style={styles.keyboardView}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <StatusBar style="dark" />
+      <StatusBar style={isHighContrast ? "light" : "dark"} />
       <ScrollView
         contentContainerStyle={[
           styles.scrollContent,
@@ -98,13 +101,13 @@ export default function LoginScreen() {
             <MaterialIcons
               name="email"
               size={20}
-              color={Colors.disabled}
+              color={colors.disabled}
               style={styles.inputIcon}
             />
             <TextInput
               style={styles.input}
               placeholder="Correo electrónico"
-              placeholderTextColor={Colors.disabled}
+              placeholderTextColor={colors.disabled}
               value={email}
               onChangeText={setEmail}
               keyboardType="email-address"
@@ -120,13 +123,13 @@ export default function LoginScreen() {
             <MaterialIcons
               name="lock"
               size={20}
-              color={Colors.disabled}
+              color={colors.disabled}
               style={styles.inputIcon}
             />
             <TextInput
               style={[styles.input, styles.passwordInput]}
               placeholder="Contraseña"
-              placeholderTextColor={Colors.disabled}
+              placeholderTextColor={colors.disabled}
               value={password}
               onChangeText={setPassword}
               secureTextEntry={!showPassword}
@@ -145,7 +148,7 @@ export default function LoginScreen() {
               <MaterialIcons
                 name={showPassword ? 'visibility-off' : 'visibility'}
                 size={20}
-                color={Colors.disabled}
+                color={colors.disabled}
               />
             </TouchableOpacity>
           </View>
@@ -153,7 +156,7 @@ export default function LoginScreen() {
           {/* Error Message */}
           {error ? (
             <View style={styles.errorContainer}>
-              <MaterialIcons name="error-outline" size={16} color={Colors.alert} />
+              <MaterialIcons name="error-outline" size={16} color={colors.alert} />
               <Text style={styles.errorText}>{error}</Text>
             </View>
           ) : null}
@@ -192,10 +195,10 @@ export default function LoginScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors) => StyleSheet.create({
   keyboardView: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: colors.background,
   },
   scrollContent: {
     flexGrow: 1,
@@ -227,7 +230,7 @@ const styles = StyleSheet.create({
   greetingSub: {
     ...Typography.body,
     fontSize: 16,
-    color: Colors.disabled,
+    color: colors.disabled,
     textAlign: 'center',
   },
 
@@ -239,9 +242,9 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.inputBackground,
+    backgroundColor: colors.inputBackground,
     borderWidth: 1,
-    borderColor: Colors.inputBorder,
+    borderColor: colors.inputBorder,
     borderRadius: BorderRadius.input,
     marginBottom: Spacing.base,
     paddingHorizontal: Spacing.md,
@@ -254,7 +257,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: Fonts.interRegular,
     fontSize: 15,
-    color: Colors.text,
+    color: colors.text,
     paddingVertical: Spacing.md,
   },
   passwordInput: {
@@ -276,7 +279,7 @@ const styles = StyleSheet.create({
   },
   errorText: {
     ...Typography.bodySmall,
-    color: Colors.alert,
+    color: colors.alert,
     flex: 1,
   },
 
@@ -293,12 +296,12 @@ const styles = StyleSheet.create({
   },
   registerText: {
     ...Typography.body,
-    color: Colors.disabled,
+    color: colors.disabled,
     textAlign: 'center',
   },
   registerTextBold: {
     fontFamily: Fonts.interSemiBold,
-    color: Colors.primary,
+    color: colors.primary,
   },
 
   // ── Footer ──────────────────────────────────
@@ -311,12 +314,12 @@ const styles = StyleSheet.create({
     width: 40,
     height: 3,
     borderRadius: 1.5,
-    backgroundColor: Colors.secondary,
+    backgroundColor: colors.secondary,
     marginBottom: Spacing.sm,
   },
   footerText: {
     ...Typography.bodySmall,
-    color: Colors.disabledLight,
+    color: colors.disabledLight,
     fontSize: 12,
   },
 });

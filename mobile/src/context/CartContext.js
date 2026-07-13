@@ -19,7 +19,7 @@ function cartReducer(state, action) {
   switch (action.type) {
     case CART_ACTIONS.ADD_ITEM: {
       const existingIndex = state.items.findIndex(
-        (item) => item.id === action.payload.id
+        (item) => item.cartItemId === action.payload.cartItemId
       );
       if (existingIndex >= 0) {
         const updatedItems = [...state.items];
@@ -38,21 +38,21 @@ function cartReducer(state, action) {
     case CART_ACTIONS.REMOVE_ITEM:
       return {
         ...state,
-        items: state.items.filter((item) => item.id !== action.payload),
+        items: state.items.filter((item) => item.cartItemId !== action.payload),
       };
 
     case CART_ACTIONS.UPDATE_QUANTITY: {
-      const { id, quantity } = action.payload;
+      const { cartItemId, quantity } = action.payload;
       if (quantity <= 0) {
         return {
           ...state,
-          items: state.items.filter((item) => item.id !== id),
+          items: state.items.filter((item) => item.cartItemId !== cartItemId),
         };
       }
       return {
         ...state,
         items: state.items.map((item) =>
-          item.id === id ? { ...item, quantity } : item
+          item.cartItemId === cartItemId ? { ...item, quantity } : item
         ),
       };
     }
@@ -72,14 +72,14 @@ export function CartProvider({ children }) {
     dispatch({ type: CART_ACTIONS.ADD_ITEM, payload: item });
   }, []);
 
-  const removeFromCart = useCallback((id) => {
-    dispatch({ type: CART_ACTIONS.REMOVE_ITEM, payload: id });
+  const removeFromCart = useCallback((cartItemId) => {
+    dispatch({ type: CART_ACTIONS.REMOVE_ITEM, payload: cartItemId });
   }, []);
 
-  const updateQuantity = useCallback((id, quantity) => {
+  const updateQuantity = useCallback((cartItemId, quantity) => {
     dispatch({
       type: CART_ACTIONS.UPDATE_QUANTITY,
-      payload: { id, quantity },
+      payload: { cartItemId, quantity },
     });
   }, []);
 
@@ -89,7 +89,16 @@ export function CartProvider({ children }) {
 
   const getItemQuantity = useCallback(
     (id) => {
-      const item = state.items.find((i) => i.id === id);
+      return state.items
+        .filter((i) => i.id === id)
+        .reduce((sum, i) => sum + i.quantity, 0);
+    },
+    [state.items]
+  );
+
+  const getCartItemQuantity = useCallback(
+    (cartItemId) => {
+      const item = state.items.find((i) => i.cartItemId === cartItemId);
       return item ? item.quantity : 0;
     },
     [state.items]
@@ -114,6 +123,7 @@ export function CartProvider({ children }) {
       updateQuantity,
       clearCart,
       getItemQuantity,
+      getCartItemQuantity,
       totalPrice,
       totalItems,
     }),
@@ -124,6 +134,7 @@ export function CartProvider({ children }) {
       updateQuantity,
       clearCart,
       getItemQuantity,
+      getCartItemQuantity,
       totalPrice,
       totalItems,
     ]

@@ -42,6 +42,43 @@ export const Colors = {
   surfaceSubtle: '#F8F9FA',
 };
 
+// ─── High Contrast Colors ──────────────────────────────────────────
+export const HighContrastColors = {
+  // Pure Black & White with High Visibility Accents
+  primary: '#FFFF00',       // Bright Yellow for high visibility
+  primaryDark: '#CCCC00',
+  primaryLight: '#333333',  // Dark gray for subtle highlights
+
+  // Text & Outlines — Pure White on Black
+  text: '#FFFFFF',
+
+  // Alerts & Accents — Bright Red
+  alert: '#FF3333',
+
+  // Secondary/Food
+  secondary: '#FFCC00',
+  secondaryLight: '#665500',
+
+  // Backgrounds — Pure Black
+  background: '#000000',
+
+  // Disabled/Inactive
+  disabled: '#AAAAAA',
+  disabledLight: '#444444',
+
+  // Additional semantic colors
+  h1Color: '#FFFF00',       // Yellow headers for readability
+  bodyColor: '#FFFFFF',
+  cardBorder: '#FFFF00',    // Yellow borders
+  inputBorder: '#FFFFFF',
+  inputBackground: '#000000',
+  overlay: 'rgba(0, 0, 0, 0.8)',
+
+  // Surface colors
+  surfaceElevated: '#111111',
+  surfaceSubtle: '#000000',
+};
+
 // ─── Typography ────────────────────────────────────────────────────
 // Font family names match the names used by @expo-google-fonts packages
 export const Fonts = {

@@ -13,6 +13,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { Colors, Typography, BorderRadius, Spacing, Animation } from '../theme';
+import { useTheme } from '../context/ThemeContext';
 
 const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 
@@ -45,6 +46,8 @@ export default function CTAButton({
   fullWidth = true,
   disabled = false,
 }) {
+  const { colors } = useTheme();
+  const styles = React.useMemo(() => createStyles(colors), [colors]);
   const scale = useSharedValue(1);
   const isDisabled = disabled || variant === 'disabled' || loading;
 
@@ -113,7 +116,7 @@ export default function CTAButton({
     >
       {loading ? (
         <ActivityIndicator
-          color={variant === 'outline' ? Colors.primary : Colors.background}
+          color={variant === 'outline' ? colors.primary : colors.background}
           size="small"
         />
       ) : (
@@ -128,7 +131,7 @@ export default function CTAButton({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors) => StyleSheet.create({
   base: {
     minHeight: 48,
     paddingVertical: Spacing.md,
@@ -153,35 +156,35 @@ const styles = StyleSheet.create({
 
   // ── Variants ────────────────────────────────
   primaryButton: {
-    backgroundColor: Colors.primary,
+    backgroundColor: colors.primary,
   },
   alertButton: {
-    backgroundColor: Colors.alert,
+    backgroundColor: colors.alert,
   },
   outlineButton: {
     backgroundColor: 'transparent',
     borderWidth: 2,
-    borderColor: Colors.primary,
+    borderColor: colors.primary,
   },
   whatsappButton: {
     backgroundColor: '#25D366',
   },
   disabledButton: {
-    backgroundColor: Colors.disabledLight,
+    backgroundColor: colors.disabledLight,
   },
 
   // ── Text ────────────────────────────────────
   buttonText: {
     ...Typography.button,
-    color: Colors.background,
+    color: colors.background,
     textAlign: 'center',
   },
   outlineText: {
     ...Typography.button,
-    color: Colors.primary,
+    color: colors.primary,
     textAlign: 'center',
   },
   disabledText: {
-    color: Colors.disabled,
+    color: colors.disabled,
   },
 });

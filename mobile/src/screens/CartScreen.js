@@ -19,7 +19,8 @@ import {
 } from '../theme';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
-import TopNavBar from '../components/TopNavBar';
+import { useTheme } from '../context/ThemeContext';
+import TopNavBar, { BOTTOM_NAV_BAR_HEIGHT } from '../components/TopNavBar';
 import QuantityControl from '../components/QuantityControl';
 import CTAButton from '../components/CTAButton';
 
@@ -35,11 +36,14 @@ export default function CartScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const { items, updateQuantity, removeFromCart, totalPrice, totalItems } = useCart();
   const { logout } = useAuth();
+  const { colors, isHighContrast } = useTheme();
+  const styles = React.useMemo(() => createStyles(colors), [colors]);
 
   const handleNavigate = useCallback(
     (tab) => {
       if (tab === 'menu') navigation.navigate('Menu');
       else if (tab === 'payment') navigation.navigate('Payment');
+      else if (tab === 'settings') navigation.navigate('Settings');
     },
     [navigation]
   );
@@ -67,6 +71,11 @@ export default function CartScreen({ navigation }) {
           <Text style={styles.itemName} numberOfLines={1}>
             {item.name}
           </Text>
+          {item.details ? (
+            <Text style={styles.itemDetails} numberOfLines={2}>
+              {item.details}
+            </Text>
+          ) : null}
           <Text style={styles.itemPrice}>
             ${item.price.toFixed(2)} c/u
           </Text>
@@ -77,8 +86,8 @@ export default function CartScreen({ navigation }) {
         <View style={styles.itemControls}>
           <QuantityControl
             quantity={item.quantity}
-            onIncrease={() => updateQuantity(item.id, item.quantity + 1)}
-            onDecrease={() => updateQuantity(item.id, item.quantity - 1)}
+            onIncrease={() => updateQuantity(item.cartItemId, item.quantity + 1)}
+            onDecrease={() => updateQuantity(item.cartItemId, item.quantity - 1)}
             size="small"
           />
         </View>
@@ -87,11 +96,11 @@ export default function CartScreen({ navigation }) {
     [updateQuantity]
   );
 
-  const keyExtractor = useCallback((item) => item.id, []);
+  const keyExtractor = useCallback((item) => item.cartItemId, []);
 
   return (
     <View style={styles.container}>
-      <StatusBar style="dark" />
+      <StatusBar style={isHighContrast ? "light" : "dark"} />
 
       {/* Top Navigation */}
       <TopNavBar
@@ -116,7 +125,10 @@ export default function CartScreen({ navigation }) {
           data={items}
           renderItem={renderCartItem}
           keyExtractor={keyExtractor}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={[
+            styles.listContent,
+            { paddingBottom: BOTTOM_NAV_BAR_HEIGHT + insets.bottom + Spacing.xl },
+          ]}
           showsVerticalScrollIndicator={false}
           ItemSeparatorComponent={() => <View style={styles.separator} />}
         />
@@ -125,7 +137,7 @@ export default function CartScreen({ navigation }) {
           <MaterialIcons
             name="shopping-cart"
             size={64}
-            color={Colors.disabledLight}
+            color={colors.disabledLight}
           />
           <Text style={styles.emptyTitle}>Tu carrito está vacío</Text>
           <Text style={styles.emptySubtext}>
@@ -146,7 +158,10 @@ export default function CartScreen({ navigation }) {
         <View
           style={[
             styles.bottomBar,
-            { paddingBottom: insets.bottom + Spacing.base },
+            {
+              paddingBottom: insets.bottom + Spacing.base,
+              bottom: BOTTOM_NAV_BAR_HEIGHT,
+            },
           ]}
         >
           {/* Order Summary */}
@@ -163,7 +178,7 @@ export default function CartScreen({ navigation }) {
               <MaterialIcons
                 name="check-circle"
                 size={20}
-                color={Colors.background}
+                color={colors.background}
               />
             }
           />
@@ -173,10 +188,10 @@ export default function CartScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.surfaceSubtle,
+    backgroundColor: colors.surfaceSubtle,
   },
 
   // ── Header ──────────────────────────────────
@@ -187,15 +202,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.base,
     paddingTop: Spacing.base,
     paddingBottom: Spacing.sm,
-    backgroundColor: Colors.surfaceSubtle,
+    backgroundColor: colors.surfaceSubtle,
   },
   headerTitle: {
     ...Typography.h2,
     fontSize: 22,
+    color: colors.text,
   },
   headerCount: {
     ...Typography.bodySmall,
-    color: Colors.disabled,
+    color: colors.disabled,
   },
 
   // ── List ────────────────────────────────────
@@ -212,7 +228,7 @@ const styles = StyleSheet.create({
   cartItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.surfaceElevated,
+    backgroundColor: colors.surfaceElevated,
     borderRadius: BorderRadius.card,
     padding: Spacing.md,
     ...Shadows.card,
@@ -221,7 +237,7 @@ const styles = StyleSheet.create({
     width: 68,
     height: 68,
     borderRadius: BorderRadius.sm,
-    backgroundColor: Colors.surfaceSubtle,
+    backgroundColor: colors.surfaceSubtle,
   },
   itemInfo: {
     flex: 1,
@@ -233,16 +249,24 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 20,
     marginBottom: 2,
+    color: colors.bodyColor,
+  },
+  itemDetails: {
+    ...Typography.bodySmall,
+    color: colors.primary,
+    fontStyle: 'italic',
+    marginBottom: 4,
   },
   itemPrice: {
     ...Typography.bodySmall,
-    color: Colors.disabled,
+    color: colors.disabled,
     marginBottom: 2,
   },
   itemSubtotal: {
     ...Typography.price,
     fontSize: 14,
     fontWeight: '600',
+    color: colors.primary,
   },
   itemControls: {
     alignItems: 'center',
@@ -262,10 +286,11 @@ const styles = StyleSheet.create({
     marginTop: Spacing.base,
     marginBottom: Spacing.sm,
     textAlign: 'center',
+    color: colors.text,
   },
   emptySubtext: {
     ...Typography.body,
-    color: Colors.disabled,
+    color: colors.disabled,
     textAlign: 'center',
     marginBottom: Spacing.xl,
   },
@@ -279,7 +304,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: Colors.surfaceElevated,
+    backgroundColor: colors.surfaceElevated,
     paddingTop: Spacing.base,
     paddingHorizontal: Spacing.base,
     borderTopLeftRadius: Spacing.lg,
@@ -295,10 +320,11 @@ const styles = StyleSheet.create({
   totalLabel: {
     ...Typography.body,
     fontSize: 16,
-    color: Colors.bodyColor,
+    color: colors.bodyColor,
   },
   totalPrice: {
     ...Typography.priceTotal,
     fontSize: 22,
+    color: colors.primary,
   },
 });

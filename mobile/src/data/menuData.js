@@ -19,6 +19,7 @@ const IMAGES = {
 };
 
 export const CATEGORIES = [
+  { id: 'todos', label: 'Todos', icon: 'restaurant-menu' },
   { id: 'hoy', label: 'De hoy', icon: 'today' },
   { id: 'especiales', label: 'Especiales', icon: 'star' },
   { id: 'dulces', label: 'Dulces', icon: 'cake' },
@@ -34,6 +35,7 @@ export const MENU_ITEMS = [
     name: 'Tacos de Bistec',
     description: 'Tres tacos de bistec con cilantro, cebolla y salsa verde. Tortilla de maíz recién hecha.',
     price: 55.00,
+    prepTime: 10,
     image: IMAGES.tacos,
   },
   {
@@ -42,6 +44,7 @@ export const MENU_ITEMS = [
     name: 'Torta de Jamón',
     description: 'Bolillo crujiente con jamón, aguacate, lechuga, tomate y jalapeño. Incluye mayonesa.',
     price: 45.00,
+    prepTime: 8,
     image: IMAGES.torta,
   },
   {
@@ -50,6 +53,7 @@ export const MENU_ITEMS = [
     name: 'Quesadilla de Queso',
     description: 'Tortilla de harina con queso Oaxaca derretido. Acompañada de salsa roja.',
     price: 35.00,
+    prepTime: 5,
     image: IMAGES.quesadilla,
   },
 
@@ -60,6 +64,7 @@ export const MENU_ITEMS = [
     name: 'Enchiladas Verdes',
     description: 'Tres enchiladas de pollo bañadas en salsa verde con crema y queso fresco. Con arroz rojo.',
     price: 65.00,
+    prepTime: 15,
     image: IMAGES.enchiladas,
   },
   {
@@ -68,6 +73,7 @@ export const MENU_ITEMS = [
     name: 'Torta Especial Raptor',
     description: 'Nuestra torta insignia: milanesa, frijoles, aguacate, queso Oaxaca y chipotle.',
     price: 70.00,
+    prepTime: 12,
     image: IMAGES.torta,
   },
   {
@@ -76,6 +82,7 @@ export const MENU_ITEMS = [
     name: 'Tacos al Pastor',
     description: 'Tres tacos al pastor con piña, cilantro y cebolla. Tortilla de maíz artesanal.',
     price: 60.00,
+    prepTime: 10,
     image: IMAGES.tacos,
   },
 
@@ -148,12 +155,64 @@ export const MENU_ITEMS = [
     price: 22.00,
     image: IMAGES.horchata,
   },
+  {
+    id: 'hoy-4',
+    category: 'hoy',
+    name: 'Chilaquiles Verdes o Rojos',
+    description: 'Totopos bañados en salsa con crema, queso, cebolla y un huevo frito.',
+    price: 60.00,
+    prepTime: 10,
+    image: IMAGES.enchiladas,
+  },
+  {
+    id: 'esp-4',
+    category: 'especiales',
+    name: 'Enchiladas Suizas',
+    description: 'Enchiladas rellenas de pollo, bañadas en salsa verde cremosa y queso gratinado.',
+    price: 75.00,
+    prepTime: 15,
+    image: IMAGES.enchiladas,
+  },
+  {
+    id: 'esp-5',
+    category: 'especiales',
+    name: 'Hamburguesa Raptor',
+    description: 'Carne de res, queso, tocino, lechuga, tomate y papas a la francesa.',
+    price: 85.00,
+    prepTime: 20,
+    image: IMAGES.torta,
+  },
+  {
+    id: 'dul-3',
+    category: 'dulces',
+    name: 'Galletas Chocochip',
+    description: 'Dos galletas horneadas crujientes con chispas de chocolate.',
+    price: 15.00,
+    image: IMAGES.flan,
+  },
+  {
+    id: 'pos-3',
+    category: 'postres',
+    name: 'Helado de Vainilla',
+    description: 'Dos bolas de helado de vainilla con jarabe de chocolate.',
+    price: 25.00,
+    image: IMAGES.flan,
+  },
+  {
+    id: 'beb-5',
+    category: 'bebidas',
+    name: 'Refresco de Cola',
+    description: 'Refresco en lata bien frío. 355ml.',
+    price: 20.00,
+    image: IMAGES.horchata,
+  },
 ];
 
 /**
  * Helper: Get menu items filtered by category
  */
 export function getItemsByCategory(categoryId) {
+  if (categoryId === 'todos') return MENU_ITEMS;
   return MENU_ITEMS.filter((item) => item.category === categoryId);
 }
 

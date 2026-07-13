@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, Image, StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, Image, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
 import {
   Colors,
   Typography,
@@ -8,6 +8,7 @@ import {
   Shadows,
 } from '../theme';
 import QuantityControl from './QuantityControl';
+import { useTheme } from '../context/ThemeContext';
 
 /**
  * ProductCard — Menu item card following the Raptor Eats design system.
@@ -26,8 +27,23 @@ export default function ProductCard({
   onIncrease,
   onDecrease,
 }) {
+  const { colors } = useTheme();
+  const styles = React.useMemo(() => createStyles(colors), [colors]);
+
+  const [details, setDetails] = useState('');
+  const [showDetails, setShowDetails] = useState(false);
+
+  const handleIncrease = () => {
+    if (onIncrease) onIncrease(details);
+  };
+
+  const handleDecrease = () => {
+    if (onDecrease) onDecrease(details);
+  };
+
   return (
     <View style={styles.card}>
+      <View style={styles.mainRow}>
       {/* Product Image */}
       <Image
         source={item.image}
@@ -53,31 +69,55 @@ export default function ProductCard({
       <View style={styles.controls}>
         <QuantityControl
           quantity={quantity}
-          onIncrease={onIncrease}
-          onDecrease={onDecrease}
+          onIncrease={handleIncrease}
+          onDecrease={handleDecrease}
           size="small"
         />
       </View>
+      </View>
+
+      {/* Details Toggle / Input */}
+      {showDetails ? (
+        <TextInput
+          style={styles.detailsInput}
+          placeholder="Ej. sin cebolla, sin azúcar..."
+          placeholderTextColor={colors.disabled}
+          value={details}
+          onChangeText={setDetails}
+          maxLength={100}
+        />
+      ) : (
+        <TouchableOpacity
+          style={styles.addDetailsBtn}
+          onPress={() => setShowDetails(true)}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.addDetailsText}>+ Añadir detalles</Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors) => StyleSheet.create({
   card: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.surfaceElevated,
+    flexDirection: 'column',
+    backgroundColor: colors.surfaceElevated,
     borderRadius: BorderRadius.card,
     padding: Spacing.md,
     marginHorizontal: Spacing.base,
     marginBottom: Spacing.md,
     ...Shadows.card,
   },
+  mainRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   image: {
     width: 80,
     height: 80,
     borderRadius: BorderRadius.sm,
-    backgroundColor: Colors.surfaceSubtle,
+    backgroundColor: colors.surfaceSubtle,
   },
   info: {
     flex: 1,
@@ -90,20 +130,40 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 20,
     marginBottom: 2,
+    color: colors.bodyColor,
   },
   description: {
     ...Typography.bodySmall,
-    color: Colors.disabled,
+    color: colors.disabled,
     marginBottom: Spacing.xs,
   },
   price: {
     ...Typography.price,
     fontSize: 15,
     fontWeight: '600',
+    color: colors.primary,
   },
   controls: {
     alignItems: 'center',
     justifyContent: 'center',
     paddingLeft: Spacing.xs,
+  },
+  addDetailsBtn: {
+    marginTop: Spacing.sm,
+    paddingVertical: Spacing.xs,
+  },
+  addDetailsText: {
+    ...Typography.label,
+    color: colors.primary,
+    fontSize: 13,
+  },
+  detailsInput: {
+    marginTop: Spacing.sm,
+    backgroundColor: colors.surfaceSubtle,
+    borderRadius: BorderRadius.sm,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.xs,
+    ...Typography.bodySmall,
+    color: colors.text,
   },
 });

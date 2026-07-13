@@ -27,12 +27,14 @@ import {
 // Context providers
 import { AuthProvider, useAuth } from './src/context/AuthContext';
 import { CartProvider } from './src/context/CartContext';
+import { ThemeProvider } from './src/context/ThemeContext';
 
 // Screens
 import LoginScreen from './src/screens/LoginScreen';
 import MenuScreen from './src/screens/MenuScreen';
 import CartScreen from './src/screens/CartScreen';
 import PaymentScreen from './src/screens/PaymentScreen';
+import SettingsScreen from './src/screens/SettingsScreen';
 
 // Theme
 import { Colors, Animation } from './src/theme';
@@ -93,14 +95,16 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <AuthProvider>
-        <CartProvider>
-          <View style={styles.root} onLayout={onLayoutRootView}>
-            <StatusBar style="dark" />
-            <RootNavigator />
-          </View>
-        </CartProvider>
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <CartProvider>
+            <View style={styles.root} onLayout={onLayoutRootView}>
+              <StatusBar style="dark" />
+              <RootNavigator />
+            </View>
+          </CartProvider>
+        </AuthProvider>
+      </ThemeProvider>
     </SafeAreaProvider>
   );
 }
@@ -133,6 +137,7 @@ function RootNavigator() {
             <Stack.Screen name="Menu" component={MenuScreen} />
             <Stack.Screen name="Cart" component={CartScreen} />
             <Stack.Screen name="Payment" component={PaymentScreen} />
+            <Stack.Screen name="Settings" component={SettingsScreen} />
           </>
         )}
       </Stack.Navigator>

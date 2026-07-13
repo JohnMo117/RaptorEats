@@ -14,10 +14,12 @@ import {
 } from '../theme';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import { CATEGORIES, getItemsByCategory } from '../data/menuData';
-import TopNavBar from '../components/TopNavBar';
+import TopNavBar, { BOTTOM_NAV_BAR_HEIGHT } from '../components/TopNavBar';
 import CategoryTabs from '../components/CategoryTabs';
 import ProductCard from '../components/ProductCard';
+import SearchBar from '../components/SearchBar';
 
 /**
  * MenuScreen — Screen 2: Comida (Main Menu)
@@ -29,11 +31,33 @@ import ProductCard from '../components/ProductCard';
  */
 export default function MenuScreen({ navigation }) {
   const [activeCategory, setActiveCategory] = useState(CATEGORIES[0].id);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [minPrice, setMinPrice] = useState('');
+  const [maxPrice, setMaxPrice] = useState('');
   const [refreshing, setRefreshing] = useState(false);
-  const { addToCart, getItemQuantity, updateQuantity } = useCart();
+  const { addToCart, getItemQuantity, getCartItemQuantity, updateQuantity } = useCart();
   const { logout } = useAuth();
+  const { colors, isHighContrast } = useTheme();
+  const styles = React.useMemo(() => createStyles(colors), [colors]);
 
-  const menuItems = getItemsByCategory(activeCategory);
+  const rawItems = getItemsByCategory(activeCategory);
+  const menuItems = React.useMemo(() => {
+    return rawItems.filter((item) => {
+      // 1. Text search
+      const query = searchQuery.toLowerCase();
+      const matchesSearch = item.name.toLowerCase().includes(query) || 
+                            item.description.toLowerCase().includes(query);
+      if (!matchesSearch) return false;
+
+      // 2. Price filter
+      const min = parseFloat(minPrice);
+      const max = parseFloat(maxPrice);
+      if (!isNaN(min) && item.price < min) return false;
+      if (!isNaN(max) && item.price > max) return false;
+
+      return true;
+    });
+  }, [rawItems, searchQuery, minPrice, maxPrice]);
   const activeCategoryLabel =
     CATEGORIES.find((c) => c.id === activeCategory)?.label || '';
 
@@ -41,6 +65,7 @@ export default function MenuScreen({ navigation }) {
     (tab) => {
       if (tab === 'cart') navigation.navigate('Cart');
       else if (tab === 'payment') navigation.navigate('Payment');
+      else if (tab === 'settings') navigation.navigate('Settings');
     },
     [navigation]
   );
@@ -50,25 +75,27 @@ export default function MenuScreen({ navigation }) {
   }, [logout]);
 
   const handleIncrease = useCallback(
-    (item) => {
-      const currentQty = getItemQuantity(item.id);
+    (item, details = '') => {
+      const cartItemId = `${item.id}-${details}`;
+      const currentQty = getCartItemQuantity(cartItemId);
       if (currentQty === 0) {
-        addToCart(item);
+        addToCart({ ...item, details, cartItemId });
       } else {
-        updateQuantity(item.id, currentQty + 1);
+        updateQuantity(cartItemId, currentQty + 1);
       }
     },
-    [addToCart, getItemQuantity, updateQuantity]
+    [addToCart, getCartItemQuantity, updateQuantity]
   );
 
   const handleDecrease = useCallback(
-    (itemId) => {
-      const currentQty = getItemQuantity(itemId);
+    (itemId, details = '') => {
+      const cartItemId = `${itemId}-${details}`;
+      const currentQty = getCartItemQuantity(cartItemId);
       if (currentQty > 0) {
-        updateQuantity(itemId, currentQty - 1);
+        updateQuantity(cartItemId, currentQty - 1);
       }
     },
-    [getItemQuantity, updateQuantity]
+    [getCartItemQuantity, updateQuantity]
   );
 
   const onRefresh = useCallback(() => {
@@ -79,13 +106,23 @@ export default function MenuScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <StatusBar style="dark" />
+      <StatusBar style={isHighContrast ? "light" : "dark"} />
 
       {/* Top Navigation */}
       <TopNavBar
         activeTab="menu"
         onNavigate={handleNavigate}
         onLogout={handleLogout}
+      />
+
+      {/* Search Bar */}
+      <SearchBar
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        minPrice={minPrice}
+        onMinPriceChange={setMinPrice}
+        maxPrice={maxPrice}
+        onMaxPriceChange={setMaxPrice}
       />
 
       {/* Category Tabs */}
@@ -106,14 +143,17 @@ export default function MenuScreen({ navigation }) {
       {/* Menu Items */}
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: BOTTOM_NAV_BAR_HEIGHT + Spacing.xl },
+        ]}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor={Colors.primary}
-            colors={[Colors.primary]}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
           />
         }
       >
@@ -122,8 +162,8 @@ export default function MenuScreen({ navigation }) {
             key={item.id}
             item={item}
             quantity={getItemQuantity(item.id)}
-            onIncrease={() => handleIncrease(item)}
-            onDecrease={() => handleDecrease(item.id)}
+            onIncrease={(details) => handleIncrease(item, details)}
+            onDecrease={(details) => handleDecrease(item.id, details)}
           />
         ))}
 
@@ -143,10 +183,10 @@ export default function MenuScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.surfaceSubtle,
+    backgroundColor: colors.surfaceSubtle,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -155,15 +195,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.base,
     paddingTop: Spacing.sm,
     paddingBottom: Spacing.sm,
-    backgroundColor: Colors.surfaceSubtle,
+    backgroundColor: colors.surfaceSubtle,
   },
   sectionTitle: {
     ...Typography.h2,
     fontSize: 22,
+    color: colors.text,
   },
   sectionCount: {
     ...Typography.bodySmall,
-    color: Colors.disabled,
+    color: colors.disabled,
   },
   scrollView: {
     flex: 1,
@@ -188,7 +229,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     ...Typography.body,
-    color: Colors.disabled,
+    color: colors.disabled,
     textAlign: 'center',
   },
 });

@@ -15,6 +15,7 @@ import {
   Animation,
   IconSize,
 } from '../theme';
+import { useTheme } from '../context/ThemeContext';
 
 const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 
@@ -38,6 +39,8 @@ export default function QuantityControl({
   maxValue = 99,
   size = 'normal',
 }) {
+  const { colors } = useTheme();
+  const styles = React.useMemo(() => createStyles(colors), [colors]);
   const minusScale = useSharedValue(1);
   const plusScale = useSharedValue(1);
 
@@ -99,7 +102,7 @@ export default function QuantityControl({
         <MaterialIcons
           name="remove"
           size={iconSz}
-          color={canDecrease ? Colors.primary : Colors.disabled}
+          color={canDecrease ? colors.primary : colors.disabled}
         />
       </AnimatedTouchable>
 
@@ -127,14 +130,14 @@ export default function QuantityControl({
         <MaterialIcons
           name="add"
           size={iconSz}
-          color={canIncrease ? Colors.background : Colors.disabled}
+          color={canIncrease ? colors.background : colors.disabled}
         />
       </AnimatedTouchable>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -146,18 +149,18 @@ const styles = StyleSheet.create({
   button: {
     borderRadius: BorderRadius.sm,
     borderWidth: 1.5,
-    borderColor: Colors.primary,
+    borderColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Colors.background,
+    backgroundColor: colors.background,
   },
   buttonPlus: {
-    backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   buttonDisabled: {
-    borderColor: Colors.disabledLight,
-    backgroundColor: Colors.surfaceSubtle,
+    borderColor: colors.disabledLight,
+    backgroundColor: colors.surfaceSubtle,
   },
   quantityContainer: {
     minWidth: 32,
@@ -171,7 +174,7 @@ const styles = StyleSheet.create({
   quantityText: {
     fontFamily: Typography.h3.fontFamily,
     fontSize: 16,
-    color: Colors.text,
+    color: colors.text,
     textAlign: 'center',
   },
   quantityTextSmall: {

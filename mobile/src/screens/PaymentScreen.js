@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -30,8 +30,9 @@ import {
 } from '../theme';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
-import { PAYMENT_INFO, PAYMENT_INSTRUCTIONS, WHATSAPP_CONFIG } from '../data/paymentData';
-import TopNavBar from '../components/TopNavBar';
+import { useTheme } from '../context/ThemeContext';
+import { PAYMENT_INFO, PAYMENT_INSTRUCTIONS } from '../data/paymentData';
+import TopNavBar, { BOTTOM_NAV_BAR_HEIGHT } from '../components/TopNavBar';
 import CTAButton from '../components/CTAButton';
 
 /**
@@ -47,11 +48,14 @@ export default function PaymentScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const { items, totalPrice, clearCart } = useCart();
   const { logout } = useAuth();
+  const { colors, isHighContrast } = useTheme();
+  const styles = React.useMemo(() => createStyles(colors), [colors]);
 
   const handleNavigate = useCallback(
     (tab) => {
       if (tab === 'menu') navigation.navigate('Menu');
       else if (tab === 'cart') navigation.navigate('Cart');
+      else if (tab === 'settings') navigation.navigate('Settings');
     },
     [navigation]
   );
@@ -60,20 +64,32 @@ export default function PaymentScreen({ navigation }) {
     logout();
   }, [logout]);
 
-  const handleSendWhatsApp = useCallback(async () => {
-    const message = WHATSAPP_CONFIG.getMessage(totalPrice, items);
-    const url = `https://wa.me/${WHATSAPP_CONFIG.phoneNumber}?text=${message}`;
+  const [isConfirmed, setIsConfirmed] = useState(false);
+  const [estimatedTime, setEstimatedTime] = useState(0);
+  const [timeRemaining, setTimeRemaining] = useState(0);
 
-    try {
-      const canOpen = await Linking.canOpenURL(url);
-      if (canOpen) {
-        await Linking.openURL(url);
+  const handleConfirmOrder = useCallback(() => {
+    let maxPrepTime = 0;
+    items.forEach(item => {
+      if (item.prepTime && item.prepTime > maxPrepTime) {
+        maxPrepTime = item.prepTime;
       }
-    } catch (err) {
-      // TODO(security): Use framework-native modal for error display
-      // instead of alert(). For prototype, we silently handle.
+    });
+    // Base time is 2 minutes for prep/packaging, plus max dish prep time
+    const totalEstTime = (maxPrepTime > 0 ? maxPrepTime : 0) + 2;
+    setEstimatedTime(totalEstTime);
+    setTimeRemaining(totalEstTime * 60); // Convert to seconds
+    setIsConfirmed(true);
+  }, [items]);
+
+  useEffect(() => {
+    if (isConfirmed && timeRemaining > 0) {
+      const timerId = setInterval(() => {
+        setTimeRemaining((prev) => prev - 1);
+      }, 1000);
+      return () => clearInterval(timerId);
     }
-  }, [totalPrice, items]);
+  }, [isConfirmed, timeRemaining]);
 
   const handleCopyToClipboard = useCallback(async (text) => {
     await Clipboard.setStringAsync(text);
@@ -81,7 +97,7 @@ export default function PaymentScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <StatusBar style="dark" />
+      <StatusBar style={isHighContrast ? "light" : "dark"} />
 
       {/* Top Navigation */}
       <TopNavBar
@@ -93,7 +109,7 @@ export default function PaymentScreen({ navigation }) {
       <ScrollView
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingBottom: insets.bottom + Spacing.xxl },
+          { paddingBottom: insets.bottom + BOTTOM_NAV_BAR_HEIGHT + Spacing.xxl },
         ]}
         showsVerticalScrollIndicator={false}
       >
@@ -112,7 +128,7 @@ export default function PaymentScreen({ navigation }) {
         {/* Instructions */}
         <View style={styles.instructionsCard}>
           <View style={styles.instructionsHeader}>
-            <MaterialIcons name="info" size={22} color={Colors.primary} />
+            <MaterialIcons name="info" size={22} color={colors.primary} />
             <Text style={styles.instructionsTitle}>
               {PAYMENT_INSTRUCTIONS.title}
             </Text>
@@ -137,6 +153,7 @@ export default function PaymentScreen({ navigation }) {
             copyValue={PAYMENT_INFO.recipientName}
             onCopy={handleCopyToClipboard}
             icon="person"
+            colors={colors}
           />
 
           <View style={styles.fieldDivider} />
@@ -147,6 +164,7 @@ export default function PaymentScreen({ navigation }) {
             copyValue={PAYMENT_INFO.cardNumberFull}
             onCopy={handleCopyToClipboard}
             icon="credit-card"
+            colors={colors}
           />
 
           <View style={styles.fieldDivider} />
@@ -157,6 +175,7 @@ export default function PaymentScreen({ navigation }) {
             copyValue={PAYMENT_INFO.clabeFull}
             onCopy={handleCopyToClipboard}
             icon="account-balance"
+            colors={colors}
           />
 
           <View style={styles.fieldDivider} />
@@ -167,26 +186,36 @@ export default function PaymentScreen({ navigation }) {
             copyValue={PAYMENT_INFO.bankName}
             onCopy={handleCopyToClipboard}
             icon="business"
+            colors={colors}
           />
         </View>
 
-        {/* WhatsApp CTA */}
-        <View style={styles.whatsappSection}>
-          <CTAButton
-            title="Enviar comprobante"
-            onPress={handleSendWhatsApp}
-            variant="whatsapp"
-            icon={
-              <MaterialIcons
-                name="chat"
-                size={22}
-                color={Colors.background}
-              />
-            }
-          />
-          <Text style={styles.whatsappHint}>
-            Se abrirá WhatsApp con los datos de tu pedido.
-          </Text>
+        {/* Order Confirmation / Timer */}
+        <View style={styles.confirmationSection}>
+          {!isConfirmed ? (
+            <CTAButton
+              title="Confirmar Pedido"
+              onPress={handleConfirmOrder}
+              variant="primary"
+              icon={
+                <MaterialIcons
+                  name="check-circle"
+                  size={22}
+                  color={colors.background}
+                />
+              }
+            />
+          ) : (
+            <View style={styles.timerContainer}>
+              <Text style={styles.timerLabel}>Tiempo estimado restante:</Text>
+              <Text style={styles.timerValue}>
+                {Math.floor(timeRemaining / 60)}:{(timeRemaining % 60).toString().padStart(2, '0')}
+              </Text>
+              <Text style={styles.timerHint}>
+                {timeRemaining > 0 ? 'Tu pedido se está preparando.' : '¡Tu pedido está listo!'}
+              </Text>
+            </View>
+          )}
         </View>
 
         {/* Order Summary */}
@@ -220,7 +249,7 @@ export default function PaymentScreen({ navigation }) {
 /**
  * PaymentField — Read-only field with copy-to-clipboard
  */
-function PaymentField({ label, value, copyValue, onCopy, icon }) {
+function PaymentField({ label, value, copyValue, onCopy, icon, colors }) {
   const scale = useSharedValue(1);
   const [copied, setCopied] = React.useState(false);
 
@@ -239,26 +268,26 @@ function PaymentField({ label, value, copyValue, onCopy, icon }) {
   };
 
   return (
-    <View style={styles.field}>
-      <View style={styles.fieldLabelRow}>
-        <MaterialIcons name={icon} size={16} color={Colors.disabled} />
-        <Text style={styles.fieldLabel}>{label}</Text>
+    <View style={stylesField(colors).field}>
+      <View style={stylesField(colors).fieldLabelRow}>
+        <MaterialIcons name={icon} size={16} color={colors.disabled} />
+        <Text style={stylesField(colors).fieldLabel}>{label}</Text>
       </View>
-      <View style={styles.fieldValueRow}>
-        <Text style={styles.fieldValue} selectable>
+      <View style={stylesField(colors).fieldValueRow}>
+        <Text style={stylesField(colors).fieldValue} selectable>
           {value}
         </Text>
         <Animated.View style={animatedStyle}>
           <TouchableOpacity
             onPress={handleCopy}
-            style={styles.copyButton}
+            style={stylesField(colors).copyButton}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             accessibilityLabel={`Copiar ${label}`}
           >
             <MaterialIcons
               name={copied ? 'check' : 'content-copy'}
               size={18}
-              color={copied ? Colors.primary : Colors.disabled}
+              color={copied ? colors.primary : colors.disabled}
             />
           </TouchableOpacity>
         </Animated.View>
@@ -267,103 +296,7 @@ function PaymentField({ label, value, copyValue, onCopy, icon }) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.surfaceSubtle,
-  },
-  scrollContent: {
-    paddingHorizontal: Spacing.base,
-  },
-
-  // ── Header ──────────────────────────────────
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingTop: Spacing.base,
-    paddingBottom: Spacing.sm,
-  },
-  headerTitle: {
-    ...Typography.h2,
-    fontSize: 22,
-  },
-  totalBadge: {
-    backgroundColor: Colors.primaryLight,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.xs,
-    borderRadius: BorderRadius.badge,
-  },
-  totalBadgeText: {
-    ...Typography.priceTotal,
-    fontSize: 16,
-  },
-
-  // ── Instructions Card ───────────────────────
-  instructionsCard: {
-    backgroundColor: Colors.surfaceElevated,
-    borderRadius: BorderRadius.card,
-    padding: Spacing.base,
-    marginBottom: Spacing.base,
-    ...Shadows.card,
-  },
-  instructionsHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: Spacing.md,
-    gap: Spacing.sm,
-  },
-  instructionsTitle: {
-    ...Typography.h3,
-    fontSize: 17,
-    color: Colors.primary,
-  },
-  stepRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: Spacing.md,
-  },
-  stepNumber: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: Colors.primaryLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: Spacing.md,
-    marginTop: 1,
-  },
-  stepNumberText: {
-    fontFamily: Fonts.interSemiBold,
-    fontSize: 12,
-    color: Colors.primary,
-  },
-  stepText: {
-    ...Typography.body,
-    flex: 1,
-    color: Colors.bodyColor,
-  },
-
-  // ── Details Card ────────────────────────────
-  detailsCard: {
-    backgroundColor: Colors.surfaceElevated,
-    borderRadius: BorderRadius.card,
-    padding: Spacing.base,
-    marginBottom: Spacing.lg,
-    ...Shadows.card,
-  },
-  detailsTitle: {
-    ...Typography.h3,
-    fontSize: 17,
-    marginBottom: Spacing.md,
-  },
-  fieldDivider: {
-    height: 1,
-    backgroundColor: Colors.cardBorder,
-    marginVertical: Spacing.md,
-  },
-
-  // ── Payment Field ───────────────────────────
+const stylesField = (colors) => StyleSheet.create({
   field: {
     gap: Spacing.xs,
   },
@@ -384,7 +317,7 @@ const styles = StyleSheet.create({
   fieldValue: {
     ...Typography.body,
     fontSize: 16,
-    color: Colors.text,
+    color: colors.text,
     fontFamily: Fonts.interMedium,
     flex: 1,
   },
@@ -392,21 +325,143 @@ const styles = StyleSheet.create({
     padding: Spacing.sm,
     marginLeft: Spacing.sm,
   },
+});
 
-  // ── WhatsApp ────────────────────────────────
-  whatsappSection: {
+const createStyles = (colors) => StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.surfaceSubtle,
+  },
+  scrollContent: {
+    paddingHorizontal: Spacing.base,
+  },
+
+  // ── Header ──────────────────────────────────
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: Spacing.base,
+    paddingBottom: Spacing.sm,
+  },
+  headerTitle: {
+    ...Typography.h2,
+    fontSize: 22,
+    color: colors.text,
+  },
+  totalBadge: {
+    backgroundColor: colors.primaryLight,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs,
+    borderRadius: BorderRadius.badge,
+  },
+  totalBadgeText: {
+    ...Typography.priceTotal,
+    fontSize: 16,
+  },
+
+  // ── Instructions Card ───────────────────────
+  instructionsCard: {
+    backgroundColor: colors.surfaceElevated,
+    borderRadius: BorderRadius.card,
+    padding: Spacing.base,
+    marginBottom: Spacing.base,
+    ...Shadows.card,
+  },
+  instructionsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: Spacing.md,
+    gap: Spacing.sm,
+  },
+  instructionsTitle: {
+    ...Typography.h3,
+    fontSize: 17,
+    color: colors.primary,
+  },
+  stepRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: Spacing.md,
+  },
+  stepNumber: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: colors.primaryLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: Spacing.md,
+    marginTop: 1,
+  },
+  stepNumberText: {
+    fontFamily: Fonts.interSemiBold,
+    fontSize: 12,
+    color: colors.primary,
+  },
+  stepText: {
+    ...Typography.body,
+    flex: 1,
+    color: colors.bodyColor,
+  },
+
+  // ── Details Card ────────────────────────────
+  detailsCard: {
+    backgroundColor: colors.surfaceElevated,
+    borderRadius: BorderRadius.card,
+    padding: Spacing.base,
+    marginBottom: Spacing.lg,
+    ...Shadows.card,
+  },
+  detailsTitle: {
+    ...Typography.h3,
+    fontSize: 17,
+    marginBottom: Spacing.md,
+    color: colors.text,
+  },
+  fieldDivider: {
+    height: 1,
+    backgroundColor: colors.cardBorder,
+    marginVertical: Spacing.md,
+  },
+
+  // ── Payment Field ───────────────────────────
+  // Moved to stylesField
+
+  // ── Confirmation & Timer ────────────────────
+  confirmationSection: {
     marginBottom: Spacing.lg,
   },
-  whatsappHint: {
+  timerContainer: {
+    backgroundColor: colors.surfaceElevated,
+    borderRadius: BorderRadius.card,
+    padding: Spacing.lg,
+    alignItems: 'center',
+    ...Shadows.card,
+    borderColor: colors.primary,
+    borderWidth: 2,
+  },
+  timerLabel: {
+    ...Typography.body,
+    color: colors.disabled,
+    marginBottom: Spacing.sm,
+  },
+  timerValue: {
+    ...Typography.h1,
+    fontSize: 48,
+    color: colors.primary,
+    fontVariant: ['tabular-nums'],
+  },
+  timerHint: {
     ...Typography.bodySmall,
-    color: Colors.disabled,
-    textAlign: 'center',
+    color: colors.text,
     marginTop: Spacing.sm,
+    fontFamily: Fonts.interMedium,
   },
 
   // ── Order Summary ───────────────────────────
   summaryCard: {
-    backgroundColor: Colors.surfaceElevated,
+    backgroundColor: colors.surfaceElevated,
     borderRadius: BorderRadius.card,
     padding: Spacing.base,
     marginBottom: Spacing.base,
@@ -416,6 +471,7 @@ const styles = StyleSheet.create({
     ...Typography.h3,
     fontSize: 17,
     marginBottom: Spacing.md,
+    color: colors.text,
   },
   summaryRow: {
     flexDirection: 'row',
@@ -427,21 +483,25 @@ const styles = StyleSheet.create({
     ...Typography.body,
     flex: 1,
     marginRight: Spacing.base,
+    color: colors.text,
   },
   summaryItemPrice: {
     ...Typography.price,
+    color: colors.primary,
   },
   summaryDivider: {
     height: 1,
-    backgroundColor: Colors.cardBorder,
+    backgroundColor: colors.cardBorder,
     marginVertical: Spacing.sm,
   },
   summaryTotalLabel: {
     ...Typography.h3,
     fontSize: 16,
+    color: colors.text,
   },
   summaryTotalPrice: {
     ...Typography.priceTotal,
     fontSize: 20,
+    color: colors.primary,
   },
 });

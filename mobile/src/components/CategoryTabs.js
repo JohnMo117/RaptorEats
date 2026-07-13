@@ -15,6 +15,7 @@ import {
   Animation,
   IconSize,
 } from '../theme';
+import { useTheme } from '../context/ThemeContext';
 
 const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 
@@ -27,6 +28,9 @@ const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
  *   - onSelect: function(categoryId)
  */
 export default function CategoryTabs({ categories, activeCategory, onSelect }) {
+  const { colors } = useTheme();
+  const styles = React.useMemo(() => createStyles(colors), [colors]);
+
   return (
     <View style={styles.wrapper}>
       <ScrollView
@@ -41,6 +45,8 @@ export default function CategoryTabs({ categories, activeCategory, onSelect }) {
             category={cat}
             isActive={activeCategory === cat.id}
             onPress={() => onSelect(cat.id)}
+            colors={colors}
+            styles={styles}
           />
         ))}
       </ScrollView>
@@ -48,7 +54,7 @@ export default function CategoryTabs({ categories, activeCategory, onSelect }) {
   );
 }
 
-function CategoryPill({ category, isActive, onPress }) {
+function CategoryPill({ category, isActive, onPress, colors, styles }) {
   const scale = useSharedValue(1);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -83,7 +89,7 @@ function CategoryPill({ category, isActive, onPress }) {
       <MaterialIcons
         name={category.icon}
         size={18}
-        color={isActive ? Colors.background : Colors.bodyColor}
+        color={isActive ? colors.background : colors.bodyColor}
         style={styles.pillIcon}
       />
       <Text style={[styles.pillText, isActive ? styles.pillTextActive : styles.pillTextInactive]}>
@@ -93,9 +99,9 @@ function CategoryPill({ category, isActive, onPress }) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors) => StyleSheet.create({
   wrapper: {
-    backgroundColor: Colors.background,
+    backgroundColor: colors.background,
     paddingVertical: Spacing.md,
   },
   container: {
@@ -111,12 +117,12 @@ const styles = StyleSheet.create({
     minHeight: 40,
   },
   pillActive: {
-    backgroundColor: Colors.primary,
+    backgroundColor: colors.primary,
   },
   pillInactive: {
-    backgroundColor: Colors.surfaceSubtle,
+    backgroundColor: colors.surfaceSubtle,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: colors.cardBorder,
   },
   pillIcon: {
     marginRight: Spacing.xs,
@@ -127,9 +133,9 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   pillTextActive: {
-    color: Colors.background,
+    color: colors.background,
   },
   pillTextInactive: {
-    color: Colors.bodyColor,
+    color: colors.bodyColor,
   },
 });
