@@ -99,7 +99,7 @@ export default function CartScreen({ navigation }) {
   const keyExtractor = useCallback((item) => item.cartItemId, []);
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar style={isHighContrast ? "light" : "dark"} />
 
       {/* Top Navigation */}

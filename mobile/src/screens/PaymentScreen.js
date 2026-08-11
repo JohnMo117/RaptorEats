@@ -7,6 +7,7 @@ import {
   Linking,
   TouchableOpacity,
   Platform,
+  Alert,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -32,6 +33,7 @@ import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { PAYMENT_INFO, PAYMENT_INSTRUCTIONS } from '../data/paymentData';
+import { apiClient } from '../api/client';
 import TopNavBar, { BOTTOM_NAV_BAR_HEIGHT } from '../components/TopNavBar';
 import CTAButton from '../components/CTAButton';
 
@@ -56,6 +58,7 @@ export default function PaymentScreen({ navigation }) {
       if (tab === 'menu') navigation.navigate('Menu');
       else if (tab === 'cart') navigation.navigate('Cart');
       else if (tab === 'settings') navigation.navigate('Settings');
+      else if (tab === 'orders') navigation.navigate('Orders');
     },
     [navigation]
   );
@@ -67,20 +70,45 @@ export default function PaymentScreen({ navigation }) {
   const [isConfirmed, setIsConfirmed] = useState(false);
   const [estimatedTime, setEstimatedTime] = useState(0);
   const [timeRemaining, setTimeRemaining] = useState(0);
+  const [loading, setLoading] = useState(false);
 
-  const handleConfirmOrder = useCallback(() => {
-    let maxPrepTime = 0;
-    items.forEach(item => {
-      if (item.prepTime && item.prepTime > maxPrepTime) {
-        maxPrepTime = item.prepTime;
-      }
-    });
-    // Base time is 2 minutes for prep/packaging, plus max dish prep time
-    const totalEstTime = (maxPrepTime > 0 ? maxPrepTime : 0) + 2;
-    setEstimatedTime(totalEstTime);
-    setTimeRemaining(totalEstTime * 60); // Convert to seconds
-    setIsConfirmed(true);
-  }, [items]);
+  const handleConfirmOrder = useCallback(async () => {
+    if (items.length === 0) return;
+    setLoading(true);
+    
+    try {
+      const orderData = {
+        totalPrice: totalPrice,
+        items: items.map(item => ({
+          productId: Number(item.id),
+          quantity: item.quantity,
+          unitPrice: item.price
+        }))
+      };
+
+      const response = await apiClient('/orders', {
+        method: 'POST',
+        body: orderData
+      });
+
+      let maxPrepTime = 0;
+      items.forEach(item => {
+        if (item.prepTime && item.prepTime > maxPrepTime) {
+          maxPrepTime = item.prepTime;
+        }
+      });
+      // Base time is 2 minutes for prep/packaging, plus max dish prep time
+      const totalEstTime = (maxPrepTime > 0 ? maxPrepTime : 0) + 2;
+      setEstimatedTime(totalEstTime);
+      setTimeRemaining(totalEstTime * 60); // Convert to seconds
+      setIsConfirmed(true);
+      clearCart();
+    } catch (err) {
+      Alert.alert('Error', err.message || 'No se pudo procesar el pedido. Intenta nuevamente.');
+    } finally {
+      setLoading(false);
+    }
+  }, [items, totalPrice, clearCart]);
 
   useEffect(() => {
     if (isConfirmed && timeRemaining > 0) {
@@ -96,7 +124,7 @@ export default function PaymentScreen({ navigation }) {
   }, []);
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar style={isHighContrast ? "light" : "dark"} />
 
       {/* Top Navigation */}

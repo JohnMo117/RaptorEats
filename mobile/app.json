@@ -25,7 +25,23 @@
       "package": "com.raptoreats.app"
     },
     "plugins": [
-      "expo-font"
-    ]
+      "expo-font",
+      "expo-splash-screen",
+      "expo-status-bar",
+      "expo-secure-store",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "2006402d-4d7d-4a6e-ac7e-7d2dd65d23de"
+      }
+    }
   }
 }

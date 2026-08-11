@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { MaterialIcons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import TopNavBar, { BOTTOM_NAV_BAR_HEIGHT } from '../components/TopNavBar';
@@ -23,6 +24,7 @@ import { Typography, Spacing, Shadows, BorderRadius, IconSize } from '../theme';
 export default function SettingsScreen({ navigation }) {
   const { logout } = useAuth();
   const { isHighContrast, toggleHighContrast, colors } = useTheme();
+  const insets = useSafeAreaInsets();
 
   const handleNavigate = (tab) => {
     if (tab === 'menu') navigation.navigate('Menu');
@@ -51,7 +53,7 @@ export default function SettingsScreen({ navigation }) {
   );
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.surfaceSubtle }]}>
+    <View style={[styles.container, { backgroundColor: colors.surfaceSubtle, paddingTop: insets.top }]}>
       <StatusBar style={isHighContrast ? 'light' : 'dark'} />
 
       <TopNavBar
@@ -93,6 +95,11 @@ export default function SettingsScreen({ navigation }) {
             <OptionItem
               icon="person"
               label="Configuración de Cuenta"
+              onPress={() => {}}
+            />
+            <OptionItem
+              icon="support-agent"
+              label="Soporte"
               onPress={() => {}}
             />
           </View>

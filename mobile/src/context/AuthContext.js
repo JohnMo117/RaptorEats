@@ -1,54 +1,92 @@
-import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
-
-/**
- * Auth Context — Simulated authentication for frontend prototype.
- *
- * TODO(security): In production, implement proper authentication using
- * OAuth 2.0 or OpenID Connect via a secure backend (BFF pattern).
- * Never store auth tokens in AsyncStorage or localStorage.
- * Session tokens should be managed via HttpOnly, Secure, SameSite cookies
- * set by the backend.
- *
- * TODO(security): Implement password strength validation (min 8 chars).
- * TODO(security): Consider MFA for account security.
- * TODO(security): Use Argon2 or bcrypt for password hashing on the backend.
- */
+import React, { createContext, useContext, useState, useCallback, useMemo, useEffect } from 'react';
+import { apiClient, setToken as setApiToken, getToken } from '../api/client';
+import * as SecureStore from 'expo-secure-store';
 
 const AuthContext = createContext(undefined);
 
 export function AuthProvider({ children }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const login = useCallback((email, password) => {
-    // Simulated login — validates non-empty fields only
-    // TODO(security): In production, send credentials over HTTPS to a secure
-    // backend endpoint. Never validate credentials client-side.
-    if (email && email.trim().length > 0 && password && password.length > 0) {
-      setIsAuthenticated(true);
-      // Only store non-sensitive display info
-      setUser({ displayName: email.split('@')[0] });
-      return { success: true };
+  // Load token on app start
+  useEffect(() => {
+    async function loadStoredToken() {
+      try {
+        const token = await getToken();
+        if (token) {
+          setIsAuthenticated(true);
+          const storedUser = await SecureStore.getItemAsync('auth_user');
+          if (storedUser) {
+            setUser(JSON.parse(storedUser));
+          }
+        }
+      } catch (e) {
+        console.error("Failed to load token", e);
+      } finally {
+        setIsLoading(false);
+      }
     }
-    return { success: false, error: 'Por favor ingresa tu correo y contraseña.' };
+    loadStoredToken();
   }, []);
 
-  const logout = useCallback(() => {
-    // Clear all client-side state on logout
+  const login = useCallback(async (email, password) => {
+    try {
+      if (!email || !password) {
+        return { success: false, error: 'Por favor ingresa tu correo y contraseña.' };
+      }
+      
+      const response = await apiClient('/auth/login', {
+        method: 'POST',
+        body: { email, password }
+      });
+      
+      await setApiToken(response.token);
+      await SecureStore.setItemAsync('auth_user', JSON.stringify(response.user));
+      setIsAuthenticated(true);
+      setUser(response.user);
+      
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.message || 'Error al iniciar sesión' };
+    }
+  }, []);
+
+  const register = useCallback(async (name, email, password) => {
+    try {
+      if (!name || !email || !password) {
+        return { success: false, error: 'Por favor completa todos los campos.' };
+      }
+      
+      const response = await apiClient('/auth/register', {
+        method: 'POST',
+        body: { name, email, password, role: 'CUSTOMER' }
+      });
+      
+      // Auto-login after registration is not required, but nice. We will just return success.
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.message || 'Error al registrarse' };
+    }
+  }, []);
+
+  const logout = useCallback(async () => {
+    await setApiToken(null);
+    await SecureStore.deleteItemAsync('auth_user');
     setIsAuthenticated(false);
     setUser(null);
-    // TODO(security): In production, also invalidate server-side session
-    // and trigger a full page reload/redirect to clear cached state.
   }, []);
 
   const value = useMemo(
     () => ({
       isAuthenticated,
       user,
+      isLoading,
       login,
+      register,
       logout,
     }),
-    [isAuthenticated, user, login, logout]
+    [isAuthenticated, user, isLoading, login, register, logout]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

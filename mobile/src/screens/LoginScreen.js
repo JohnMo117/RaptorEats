@@ -33,32 +33,46 @@ import CTAButton from '../components/CTAButton';
  * - "Iniciar sesión" CTA button
  */
 export default function LoginScreen() {
-  const { login } = useAuth();
+  const { login, register } = useAuth();
   const { colors, isHighContrast } = useTheme();
   const styles = React.useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
 
+  const [isRegistering, setIsRegistering] = useState(false);
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = () => {
+  const handleSubmit = async () => {
     setError('');
     setLoading(true);
 
-    // Simulate network delay
-    setTimeout(() => {
-      const result = login(email, password);
+    if (isRegistering) {
+      const result = await register(name, email, password);
+      if (!result.success) {
+        setError(result.error);
+      } else {
+        // Auto login on successful register
+        const loginResult = await login(email, password);
+        if (!loginResult.success) {
+          setError(loginResult.error);
+        }
+      }
+    } else {
+      const result = await login(email, password);
       if (!result.success) {
         setError(result.error);
       }
-      setLoading(false);
-    }, 800);
+    }
+    setLoading(false);
   };
 
-  const isFormValid = email.trim().length > 0 && password.length > 0;
+  const isFormValid = isRegistering 
+    ? name.trim().length > 0 && email.trim().length > 0 && password.length > 0
+    : email.trim().length > 0 && password.length > 0;
 
   return (
     <KeyboardAvoidingView
@@ -87,15 +101,37 @@ export default function LoginScreen() {
         {/* Brand Greeting */}
         <View style={styles.greetingContainer}>
           <Text style={styles.greeting}>
-            ¡Hola! ¿Qué vas a comer hoy?
+            {isRegistering ? '¡Únete a Raptor Eats!' : '¡Hola! ¿Qué vas a comer hoy?'}
           </Text>
           <Text style={styles.greetingSub}>
-            El menú ya está listo. 🦖
+            {isRegistering ? 'Crea tu cuenta para empezar.' : 'El menú ya está listo. 🦖'}
           </Text>
         </View>
 
         {/* Form */}
         <View style={styles.form}>
+          
+          {/* Name Input (Only on Register) */}
+          {isRegistering && (
+            <View style={styles.inputContainer}>
+              <MaterialIcons
+                name="person"
+                size={20}
+                color={colors.disabled}
+                style={styles.inputIcon}
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="Nombre completo"
+                placeholderTextColor={colors.disabled}
+                value={name}
+                onChangeText={setName}
+                autoCapitalize="words"
+                returnKeyType="next"
+              />
+            </View>
+          )}
+
           {/* Email Input */}
           <View style={styles.inputContainer}>
             <MaterialIcons
@@ -136,7 +172,7 @@ export default function LoginScreen() {
               autoCapitalize="none"
               autoComplete="password"
               returnKeyType="done"
-              onSubmitEditing={isFormValid ? handleLogin : undefined}
+              onSubmitEditing={isFormValid ? handleSubmit : undefined}
               accessibilityLabel="Contraseña"
             />
             <TouchableOpacity
@@ -161,10 +197,10 @@ export default function LoginScreen() {
             </View>
           ) : null}
 
-          {/* Login CTA */}
+          {/* Submit CTA */}
           <CTAButton
-            title="Iniciar sesión"
-            onPress={handleLogin}
+            title={isRegistering ? 'Crear cuenta' : 'Iniciar sesión'}
+            onPress={handleSubmit}
             variant={isFormValid ? 'primary' : 'disabled'}
             disabled={!isFormValid}
             loading={loading}
@@ -175,12 +211,16 @@ export default function LoginScreen() {
           <TouchableOpacity
             style={styles.registerLink}
             activeOpacity={0.7}
-            accessibilityRole="link"
-            accessibilityLabel="Crear cuenta nueva"
+            onPress={() => {
+              setIsRegistering(!isRegistering);
+              setError('');
+            }}
           >
             <Text style={styles.registerText}>
-              ¿No tienes cuenta?{' '}
-              <Text style={styles.registerTextBold}>Regístrate</Text>
+              {isRegistering ? '¿Ya tienes cuenta? ' : '¿No tienes cuenta? '}
+              <Text style={styles.registerTextBold}>
+                {isRegistering ? 'Inicia sesión' : 'Regístrate'}
+              </Text>
             </Text>
           </TouchableOpacity>
         </View>

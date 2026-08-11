@@ -1,0 +1,11 @@
+{
+  "name": "raptoreats",
+  "version": "1.0.0",
+  "description": "App designed to manage food orders in the UTMiR cafe",
+  "scripts": {
+    "dev:lan": "concurrently \"npm run dev --prefix server\" \"npm run dev --prefix dashboard\""
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.4"
+  }
+}

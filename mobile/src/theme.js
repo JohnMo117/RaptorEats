@@ -7,47 +7,47 @@
 
 // ─── Colors ────────────────────────────────────────────────────────
 export const Colors = {
-  // Primary brand color — "Verde Raptor"
-  primary: '#118C2D',
-  primaryDark: '#0D6B22',
+  // Primary brand color — "Verde Vibrante"
+  primary: '#00B248',
+  primaryDark: '#008C36',
   primaryLight: '#E8F5E9',
 
-  // Text & Outlines — "Negro Carbón"
-  text: '#000000',
+  // Text & Outlines
+  text: '#1A1A1A',
 
-  // Alerts & Accents — "Rojo Impulso"
-  alert: '#A82020',
+  // Alerts & Accents
+  alert: '#D32F2F',
 
-  // Secondary/Food — "Beige Gourmet"
-  secondary: '#E6D09B',
-  secondaryLight: '#F5ECCD',
+  // Secondary/Food — "Naranja Apetitoso"
+  secondary: '#FF9800',
+  secondaryLight: '#FFE0B2',
 
-  // Backgrounds — "Blanco Puro"
-  background: '#FFFFFF',
+  // Backgrounds — "Fondo con toque de color"
+  background: '#F4F8F5',
 
   // Disabled/Inactive
   disabled: '#888888',
   disabledLight: '#CCCCCC',
 
   // Additional semantic colors
-  h1Color: '#1B4332',
+  h1Color: '#004D20',
   bodyColor: '#2D2D2D',
-  cardBorder: '#F0F0F0',
+  cardBorder: '#E0E0E0',
   inputBorder: '#E0E0E0',
   inputBackground: '#FAFAFA',
   overlay: 'rgba(0, 0, 0, 0.4)',
 
   // Surface colors
   surfaceElevated: '#FFFFFF',
-  surfaceSubtle: '#F8F9FA',
+  surfaceSubtle: '#E8F5E9',
 };
 
 // ─── High Contrast Colors ──────────────────────────────────────────
 export const HighContrastColors = {
   // Pure Black & White with High Visibility Accents
-  primary: '#FFFF00',       // Bright Yellow for high visibility
-  primaryDark: '#CCCC00',
-  primaryLight: '#333333',  // Dark gray for subtle highlights
+  primary: '#00FF00',       // Bright Green for high visibility
+  primaryDark: '#00CC00',
+  primaryLight: '#113311',
 
   // Text & Outlines — Pure White on Black
   text: '#FFFFFF',
@@ -56,8 +56,8 @@ export const HighContrastColors = {
   alert: '#FF3333',
 
   // Secondary/Food
-  secondary: '#FFCC00',
-  secondaryLight: '#665500',
+  secondary: '#FF9900',     // Bright Orange
+  secondaryLight: '#664400',
 
   // Backgrounds — Pure Black
   background: '#000000',
@@ -67,9 +67,9 @@ export const HighContrastColors = {
   disabledLight: '#444444',
 
   // Additional semantic colors
-  h1Color: '#FFFF00',       // Yellow headers for readability
+  h1Color: '#00FF00',       // Green headers for readability
   bodyColor: '#FFFFFF',
-  cardBorder: '#FFFF00',    // Yellow borders
+  cardBorder: '#00FF00',    // Green borders
   inputBorder: '#FFFFFF',
   inputBackground: '#000000',
   overlay: 'rgba(0, 0, 0, 0.8)',

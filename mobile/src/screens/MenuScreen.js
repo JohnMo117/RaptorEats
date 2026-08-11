@@ -1,12 +1,14 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
   ScrollView,
   StyleSheet,
   RefreshControl,
+  ActivityIndicator,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   Colors,
   Typography,
@@ -15,38 +17,64 @@ import {
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { CATEGORIES, getItemsByCategory } from '../data/menuData';
+import { apiClient } from '../api/client';
 import TopNavBar, { BOTTOM_NAV_BAR_HEIGHT } from '../components/TopNavBar';
 import CategoryTabs from '../components/CategoryTabs';
 import ProductCard from '../components/ProductCard';
 import SearchBar from '../components/SearchBar';
 
-/**
- * MenuScreen — Screen 2: Comida (Main Menu)
- *
- * - TopNavBar (Comida active)
- * - Horizontal category tabs
- * - ScrollView of ProductCards filtered by selected category
- * - Section title for current category
- */
 export default function MenuScreen({ navigation }) {
-  const [activeCategory, setActiveCategory] = useState(CATEGORIES[0].id);
+  const [categories, setCategories] = useState([]);
+  const [activeCategory, setActiveCategory] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
   const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
+
   const { addToCart, getItemQuantity, getCartItemQuantity, updateQuantity } = useCart();
   const { logout } = useAuth();
   const { colors, isHighContrast } = useTheme();
   const styles = React.useMemo(() => createStyles(colors), [colors]);
+  const insets = useSafeAreaInsets();
 
-  const rawItems = getItemsByCategory(activeCategory);
+  const fetchMenu = async () => {
+    try {
+      const data = await apiClient('/menu');
+      // Format backend categories to match frontend props
+      const formatted = data.map(cat => ({
+        id: String(cat.id),
+        label: cat.name,
+        products: cat.products || []
+      }));
+      setCategories(formatted);
+      if (formatted.length > 0 && !activeCategory) {
+        setActiveCategory(formatted[0].id);
+      }
+    } catch (err) {
+      console.error('Failed to fetch menu:', err);
+    }
+  };
+
+  useEffect(() => {
+    fetchMenu().finally(() => setLoading(false));
+  }, []);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchMenu();
+    setRefreshing(false);
+  }, []);
+
+  const activeCategoryObj = categories.find((c) => c.id === activeCategory) || { products: [] };
+  const rawItems = activeCategoryObj.products;
+  
   const menuItems = React.useMemo(() => {
     return rawItems.filter((item) => {
       // 1. Text search
       const query = searchQuery.toLowerCase();
       const matchesSearch = item.name.toLowerCase().includes(query) || 
-                            item.description.toLowerCase().includes(query);
+                            (item.description && item.description.toLowerCase().includes(query));
       if (!matchesSearch) return false;
 
       // 2. Price filter
@@ -58,14 +86,15 @@ export default function MenuScreen({ navigation }) {
       return true;
     });
   }, [rawItems, searchQuery, minPrice, maxPrice]);
-  const activeCategoryLabel =
-    CATEGORIES.find((c) => c.id === activeCategory)?.label || '';
+
+  const activeCategoryLabel = activeCategoryObj.label || '';
 
   const handleNavigate = useCallback(
     (tab) => {
       if (tab === 'cart') navigation.navigate('Cart');
       else if (tab === 'payment') navigation.navigate('Payment');
       else if (tab === 'settings') navigation.navigate('Settings');
+      else if (tab === 'orders') navigation.navigate('Orders');
     },
     [navigation]
   );
@@ -98,14 +127,16 @@ export default function MenuScreen({ navigation }) {
     [getCartItemQuantity, updateQuantity]
   );
 
-  const onRefresh = useCallback(() => {
-    setRefreshing(true);
-    // Simulate refresh delay
-    setTimeout(() => setRefreshing(false), 1000);
-  }, []);
+  if (loading) {
+    return (
+      <View style={[styles.container, { paddingTop: insets.top, justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar style={isHighContrast ? "light" : "dark"} />
 
       {/* Top Navigation */}
@@ -126,11 +157,13 @@ export default function MenuScreen({ navigation }) {
       />
 
       {/* Category Tabs */}
-      <CategoryTabs
-        categories={CATEGORIES}
-        activeCategory={activeCategory}
-        onSelect={setActiveCategory}
-      />
+      {categories.length > 0 && (
+        <CategoryTabs
+          categories={categories}
+          activeCategory={activeCategory}
+          onSelect={setActiveCategory}
+        />
+      )}
 
       {/* Section Title */}
       <View style={styles.sectionHeader}>
@@ -171,12 +204,11 @@ export default function MenuScreen({ navigation }) {
           <View style={styles.emptyState}>
             <Text style={styles.emptyIcon}>🦖</Text>
             <Text style={styles.emptyText}>
-              No hay platillos disponibles en esta categoría.
+              No hay platillos disponibles.
             </Text>
           </View>
         )}
 
-        {/* Bottom padding for scroll */}
         <View style={styles.scrollPadding} />
       </ScrollView>
     </View>
@@ -215,8 +247,6 @@ const createStyles = (colors) => StyleSheet.create({
   scrollPadding: {
     height: Spacing.xxl,
   },
-
-  // ── Empty State ─────────────────────────────
   emptyState: {
     alignItems: 'center',
     justifyContent: 'center',

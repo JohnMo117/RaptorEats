@@ -37,6 +37,7 @@ const NAV_ITEMS = [
   { key: 'menu', label: 'Comida', icon: 'restaurant-menu' },
   { key: 'cart', label: 'Carrito', icon: 'shopping-cart' },
   { key: 'payment', label: 'Pago', icon: 'payment' },
+  { key: 'orders', label: 'Mis Pedidos', icon: 'receipt-long' },
   { key: 'settings', label: 'Ajustes', icon: 'settings' },
 ];
 
